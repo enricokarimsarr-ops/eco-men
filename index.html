@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Man: Il Labirinto dell'Economia</title>
+    <style>
+        :root {
+            --bg-color: #0a0a12;
+            --panel-color: #141423;
+            --neon-blue: #00f0ff;
+            --neon-pink: #ff007f;
+            --neon-yellow: #ffdf00;
+            --neon-green: #39ff14;
+            --text-color: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .arcade-container {
+            background: var(--panel-color);
+            border: 4px solid #1f1f3d;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 0 35px rgba(0, 240, 255, 0.2), inset 0 0 15px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            max-width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        h1 {
+            margin: 0 0 5px 0;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--neon-yellow);
+            text-shadow: 0 0 12px rgba(255, 223, 0, 0.6);
+        }
+
+        .subtitle {
+            margin: 0;
+            color: #8c8ca0;
+            font-size: 0.95rem;
+        }
+
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 480px;
+            background: #090911;
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: 2px solid #252545;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .hud-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #score-val {
+            color: var(--neon-green);
+            text-shadow: 0 0 8px rgba(57, 255, 20, 0.4);
+        }
+
+        #lives-val {
+            letter-spacing: 3px;
+        }
+
+        .timer-container {
+            width: 480px;
+            height: 14px;
+            background: #090911;
+            border: 2px solid #252545;
+            border-radius: 7px;
+            margin-bottom: 15px;
+            overflow: hidden;
+            position: relative;
+            display: none;
+        }
+
+        #timer-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, var(--neon-blue), #0077ff);
+            box-shadow: 0 0 8px var(--neon-blue);
+            transition: width 0.1s linear;
+        }
+
+        #timer-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            line-height: 10px;
+            color: #fff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .canvas-area {
+            position: relative;
+        }
+
+        canvas {
+            background: #040408;
+            border: 4px solid #1f1f45;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.8);
+            display: block;
+        }
+
+        /* Schermate di Overlay */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 10, 18, 0.92);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay h2 {
+            font-size: 2rem;
+            margin: 0 0 15px 0;
+            text-transform: uppercase;
+        }
+
+        .overlay.start h2 { color: var(--neon-blue); text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+        .overlay.win h2 { color: var(--neon-green); text-shadow: 0 0 10px rgba(57,255,20,0.5); }
+        .overlay.lose h2 { color: var(--neon-pink); text-shadow: 0 0 10px rgba(255,0,127,0.5); }
+
+        .overlay p {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #b0b0cb;
+            margin: 0 0 20px 0;
+            max-width: 380px;
+        }
+
+        .btn-arcade {
+            background: linear-gradient(180deg, #ff007f 0%, #b30059 100%);
+            border: none;
+            color: white;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 0, 127, 0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+            transition: transform 0.1s, box-shadow 0.2s;
+        }
+
+        .btn-arcade:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255, 0, 127, 0.6);
+        }
+
+        .btn-arcade:active {
+            transform: translateY(1px);
+        }
+
+        .controls-hint {
+            margin-top: 15px;
+            font-size: 0.85rem;
+            color: #61617d;
+            display: flex;
+            gap: 15px;
+        }
+
+        .key-badge {
+            background: #20203a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            border: 1px solid #3c3c66;
+            color: #a0a0ca;
+        }
+    </style>
+</head>
+<body>
+
+<div class="arcade-container">
+    <header>
+        <h1>Eco-Man</h1>
+        <div class="subtitle">Il Labirinto dell'Economia vs Inflazione</div>
+    </header>
+
+    <div class="hud">
+        <div class="hud-item">💰 <span id="score-label">Risparmi:</span> <span id="score-val">0€</span></div>
+        <div class="hud-item" id="pause-indicator" style="color: var(--neon-pink); display: none; animation: blink 1s infinite;">PAUSA</div>
+        <div class="hud-item">❤️ <span id="lives-val">❤️❤️❤️</span></div>
+    </div>
+
+    <div class="timer-container" id="investment-timer">
+        <div id="timer-bar"></div>
+        <div id="timer-text">Scudo Investimento Attivo</div>
+    </div>
+
+    <div class="canvas-area">
+        <!-- Canvas principale del gioco -->
+        <canvas id="gameCanvas" width="480" height="480"></canvas>
+
+        <!-- Overlay schermata iniziale -->
+        <div class="overlay start" id="overlay-start">
+            <h2>Pronto alla sfida?</h2>
+            <p>Guida il risparmiatore nel labirinto. Raccogli i <b>Risparmi Liquidi (monete)</b> prima che l'<b>Inflazione (fantasmi)</b> li divori!<br><br>Raccogli i <b>Diamanti</b> per attivare un <b>Investimento</b>: renderai l'inflazione vulnerabile e potrai contrattaccare!</p>
+            <button class="btn-arcade" onclick="startGame()">Inizia Partita</button>
+        </div>
+
+        <!-- Overlay Vittoria -->
+        <div class="overlay win" id="overlay-win" style="display: none;">
+            <h2>Vittoria Finanziaria!</h2>
+            <p>Ottimo lavoro! Hai messo al sicuro l'intero capitale e sconfitto l'erosione dell'inflazione grazie a investimenti tempestivi.</p>
+            <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; color: var(--neon-green);">Punteggio finale: <span id="final-score-win">0</span>€</div>
+            <button class="btn-arcade" onclick="startGame()">Gioca Ancora</button>
+        </div>
+
+        <!-- Overlay Game Over -->
+        <div class="overlay lose" id="overlay-lose" style="display: none;">
+            <h2>Bancarotta!</h2>
+            <p>L'inflazione ha proscugato completamente il tuo potere d'acquisto. Ricorda di proteggerti sempre con investimenti mirati.</p>
+            <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; color: var(--neon-pink);">Risparmi salvati: <span id="final-score-lose">0</span>€</div>
+            <button class="btn-arcade" onclick="startGame()">Riprova</button>
+        </div>
+    </div>
+
+    <div class="controls-hint">
+        <div><span class="key-badge">⬅️ ⬆️ ⬇️ ➡️</span> Per Muoverti</div>
+        <div><span class="key-badge">BARRA SPAZIATRICE</span> Pausa</div>
+    </div>
+</div>
+
+<script>
+    // --- MOTORE AUDIO WEB AUDIO API (Sintesi nativa chiptune) ---
+    class SoundEngine {
+        constructor() {
+            this.ctx = null;
+        }
+
+        init() {
+            if (!this.ctx) {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.ctx.state === 'suspended') {
+                this.ctx.resume();
+            }
+        }
+
+        playCoin() {
+            this.init();
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, this.ctx.currentTime);
+            osc.frequency.setValueAtTime(950, this.ctx.currentTime + 0.06);
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.15);
+        }
+
+        playDiamond() {
+            this.init();
+            let now = this.ctx.currentTime;
+            let notes = [523.25, 659.25, 783.99, 1046.50]; // Arpeggio di DO Maggiore
+            notes.forEach((freq, i) => {
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, now + i * 0.05);
+                gain.gain.setValueAtTime(0.15, now + i * 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.05 + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.05);
+                osc.stop(now + i * 0.05 + 0.2);
+            });
+        }
+
+        playEatGhost() {
+            this.init();
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1400, this.ctx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.3);
+        }
+
+        playDeath() {
+            this.init();
+            let osc = this.ctx.createOscillator();
+            let gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(400, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.6);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.6);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.6);
+        }
+
+        playWin() {
+            this.init();
+            let now = this.ctx.currentTime;
+            let melody = [587.33, 659.25, 698.46, 880, 783.99, 880, 1046.50];
+            melody.forEach((freq, i) => {
+                let osc = this.ctx.createOscillator();
+                let gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, now + i * 0.1);
+                gain.gain.setValueAtTime(0.2, now + i * 0.1);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now + i * 0.1);
+                osc.stop(now + i * 0.1 + 0.15);
+            });
+        }
+    }
+
+    const audio = new SoundEngine();
+
+    // --- CONFIGURAZIONE LOGICA DI GIOCO ---
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+
+    const tileSize = 32; // Ogni casella è 32x32 pixel (Griglia 15x15 = 480x480)
+    let score = 0;
+    let lives = 3;
+    let gameActive = false;
+    let isPaused = false;
+    let powerModeTimeMax = 360; // 6 secondi a 60fps
+    let powerModeTimer = 0;
+
+    // Mappa di gioco: 1=Muro, 2=Moneta, 3=Diamante, 0=Vuoto
+    const initialMaze = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,3,2,2,2,2,2,1,2,2,2,2,2,3,1],
+        [1,2,1,1,2,1,2,1,2,1,2,1,1,2,1],
+        [1,2,1,1,2,1,2,2,2,1,2,1,1,2,1],
+        [1,2,2,2,2,1,1,0,1,1,2,2,2,2,1],
+        [1,1,1,2,1,1,0,0,0,1,1,2,1,1,1],
+        [0,2,2,2,2,0,0,0,0,0,2,2,2,2,0], // Tunnel laterale
+        [1,1,1,2,1,1,0,0,0,1,1,2,1,1,1],
+        [1,2,2,2,2,1,1,1,1,1,2,2,2,2,1],
+        [1,2,1,1,2,2,2,1,2,2,2,1,1,2,1],
+        [1,2,2,1,1,1,2,1,2,1,1,1,2,2,1],
+        [1,1,2,2,2,2,2,0,2,2,2,2,2,1,1],
+        [1,3,2,1,1,2,1,1,1,2,1,1,2,3,1],
+        [1,2,2,2,2,2,2,2,2,2,2,2,2,2,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+    let maze = [];
+
+    // Struttura del giocatore (Eco-Man)
+    const player = {
+        x: 7 * tileSize,
+        y: 11 * tileSize,
+        dirX: 0,
+        dirY: 0,
+        nextDirX: 0,
+        nextDirY: 0,
+        speed: 4, // Multiplo perfetto di 32 per evitare incastri millimetrici
+        angle: 0
+    };
+
+    // Struttura dei Fantasmi (L'Inflazione)
+    const ghosts = [
+        { id: 1, x: 7 * tileSize, y: 6 * tileSize, dirX: 1, dirY: 0, baseColor: "#ff007f", color: "#ff007f", speed: 2, spawnX: 7 * tileSize, spawnY: 6 * tileSize },
+        { id: 2, x: 6 * tileSize, y: 6 * tileSize, dirX: -1, dirY: 0, baseColor: "#39ff14", color: "#39ff14", speed: 2, spawnX: 6 * tileSize, spawnY: 6 * tileSize },
+        { id: 3, x: 8 * tileSize, y: 6 * tileSize, dirX: 0, dirY: -1, baseColor: "#00f0ff", color: "#00f0ff", speed: 2, spawnX: 8 * tileSize, spawnY: 6 * tileSize }
+    ];
+
+    // --- CONTROLLI E INPUT ---
+    window.addEventListener("keydown", e => {
+        if (e.code === "Space") {
+            e.preventDefault();
+            if (gameActive) {
+                isPaused = !isPaused;
+                document.getElementById("pause-indicator").style.display = isPaused ? "block" : "none";
+            }
+            return;
+        }
+
+        if (!gameActive || isPaused) return;
+
+        switch (e.key) {
+            case "ArrowUp":    player.nextDirX = 0;  player.nextDirY = -1; e.preventDefault(); break;
+            case "ArrowDown":  player.nextDirX = 0;  player.nextDirY = 1;  e.preventDefault(); break;
+            case "ArrowLeft":  player.nextDirX = -1; player.nextDirY = 0;  e.preventDefault(); break;
+            case "ArrowRight": player.nextDirX = 1;  player.nextDirY = 0;  e.preventDefault(); break;
+        }
+    });
+
+    // Funzione helper per verificare la collisione con i muri
+    function isWall(pixelX, pixelY) {
+        // Gestione corretta dei tunnel laterali (fuori dai limiti orizzontali del canvas)
+        if (pixelX < 0 || pixelX >= canvas.width) return false;
+        
+        let gridX = Math.floor(pixelX / tileSize);
+        let gridY = Math.floor(pixelY / tileSize);
+        
+        if (gridY >= 0 && gridY < maze.length && gridX >= 0 && gridX < maze[gridY].length) {
+            return maze[gridY][gridX] === 1;
+        }
+        return true;
+    }
+
+    // Controlla se lo spostamento in una direzione specifica è libero da muri
+    function canMoveInDirection(x, y, dx, dy) {
+        // Verifica i punti d'angolo della Hitbox per impedire compenetrazioni nei muri
+        let nextX = x + dx * player.speed;
+        let nextY = y + dy * player.speed;
+
+        if (dx !== 0) {
+            // Movimento orizzontale: controlla l'angolo superiore ed inferiore della hitbox
+            return !isWall(nextX + (dx > 0 ? tileSize - 1 : 0), nextY) && 
+                   !isWall(nextX + (dx > 0 ? tileSize - 1 : 0), nextY + tileSize - 1);
+        }
+        if (dy !== 0) {
+            // Movimento verticale: controlla l'angolo sinistro e destro della hitbox
+            return !isWall(nextX, nextY + (dy > 0 ? tileSize - 1 : 0)) && 
+                   !isWall(nextX + tileSize - 1, nextY + (dy > 0 ? tileSize - 1 : 0));
+        }
+        return true;
+    }
+
+    // --- LOGICA DI AVVIO E RESET ---
+    function startGame() {
+        audio.init();
+        
+        // Clona la mappa iniziale
+        maze = initialMaze.map(row => [...row]);
+        
+        score = 0;
+        lives = 3;
+        powerModeTimer = 0;
+        isPaused = false;
+        gameActive = true;
+
+        document.getElementById("score-val").innerText = "0€";
+        document.getElementById("lives-val").innerText = "❤️❤️❤️";
+        document.getElementById("investment-timer").style.display = "none";
+        document.getElementById("pause-indicator").style.display = "none";
+        
+        // Nascondi gli overlay di notifica
+        document.getElementById("overlay-start").style.display = "none";
+        document.getElementById("overlay-win").style.display = "none";
+        document.getElementById("overlay-lose").style.display = "none";
+
+        resetPositions();
+    }
+
+    function resetPositions() {
+        player.x = 7 * tileSize;
+        player.y = 11 * tileSize;
+        player.dirX = 0;
+        player.dirY = 0;
+        player.nextDirX = 0;
+        player.nextDirY = 0;
+
+        ghosts.forEach(g => {
+            g.x = g.spawnX;
+            g.y = g.spawnY;
+            // Direzioni iniziali preimpostate stabili
+            g.dirX = g.id % 2 === 0 ? 1 : -1;
+            g.dirY = 0;
+            g.color = g.baseColor;
+        });
+    }
+
+    // --- AGGIORNAMENTO STATO DEL GIOCO (Update Loop) ---
+    function update() {
+        if (!gameActive || isPaused) return;
+
+        // 1. Gestione Scudo Investimento (Power Mode)
+        if (powerModeTimer > 0) {
+            powerModeTimer--;
+            let percent = (powerModeTimer / powerModeTimeMax) * 100;
+            document.getElementById("timer-bar").style.width = percent + "%";
+            
+            // Effetto lampeggiante negli ultimi 1.5 secondi (90 frame) per creare ansia costruttiva
+            if (powerModeTimer < 90 && Math.floor(powerModeTimer / 10) % 2 === 0) {
+                ghosts.forEach(g => g.color = "#ffffff");
+            } else {
+                ghosts.forEach(g => g.color = "#0077ff"); // Colore blu vulnerabile
+            }
+
+            if (powerModeTimer === 0) {
+                ghosts.forEach(g => g.color = g.baseColor);
+                document.getElementById("investment-timer").style.display = "none";
+            }
+        }
+
+        // 2. Movimento fluido di Eco-Man (Sincronizzato alla griglia di pixel)
+        // Se il giocatore desidera curvare e la strada è libera, aggiorna la direzione principale
+        if (player.nextDirX !== 0 || player.nextDirY !== 0) {
+            if (player.x % tileSize === 0 && player.y % tileSize === 0) {
+                if (canMoveInDirection(player.x, player.y, player.nextDirX, player.nextDirY)) {
+                    player.dirX = player.nextDirX;
+                    player.dirY = player.nextDirY;
+                }
+            } else {
+                // Inversione di marcia immediata consentita anche fuori dall'allineamento perfetto della griglia
+                if ((player.nextDirX === -player.dirX && player.nextDirX !== 0) || 
+                    (player.nextDirY === -player.dirY && player.nextDirY !== 0)) {
+                    player.dirX = player.nextDirX;
+                    player.dirY = player.nextDirY;
+                }
+            }
+        }
+
+        // Muovi effettivamente se non ci sono collisioni imminenti
+        if (canMoveInDirection(player.x, player.y, player.dirX, player.dirY)) {
+            player.x += player.dirX * player.speed;
+            player.y += player.dirY * player.speed;
+        }
+
+        // Gestione Tunnel di fuga laterale (Avvolgimento)
+        if (player.x < -tileSize + 4) {
+            player.x = canvas.width - 4;
+        } else if (player.x > canvas.width) {
+            player.x = -tileSize + 4;
+        }
+
+        // 3. Interazione con gli oggetti della griglia (Monete e Diamanti)
+        let centerGridX = Math.floor((player.x + tileSize / 2) / tileSize);
+        let centerGridY = Math.floor((player.y + tileSize / 2) / tileSize);
+
+        if (centerGridY >= 0 && centerGridY < maze.length && centerGridX >= 0 && centerGridX < maze[0].length) {
+            if (maze[centerGridY][centerGridX] === 2) {
+                // Raccolta Risparmi Liquidi
+                maze[centerGridY][centerGridX] = 0;
+                score += 10;
+                document.getElementById("score-val").innerText = score + "€";
+                audio.playCoin();
+                checkVictoryCondition();
+            } else if (maze[centerGridY][centerGridX] === 3) {
+                // Attivazione Investimento Strutturato
+                maze[centerGridY][centerGridX] = 0;
+                score += 50;
+                document.getElementById("score-val").innerText = score + "€";
+                powerModeTimer = powerModeTimeMax;
+                document.getElementById("investment-timer").style.display = "block";
+                audio.playDiamond();
+                checkVictoryCondition();
+            }
+        }
+
+        // 4. Intelligenza Artificiale e Spostamento dei Fantasmi (L'Inflazione)
+        ghosts.forEach(g => {
+            // I fantasmi scelgono una nuova direzione solo quando si trovano precisamente allineati alla griglia
+            if (g.x % tileSize === 0 && g.y % tileSize === 0) {
+                let currentGridX = g.x / tileSize;
+                let currentGridY = g.y / tileSize;
+
+                let directions = [
+                    {x: 1, y: 0}, {x: -1, y: 0},
+                    {x: 0, y: 1}, {x: 0, y: -1}
+                ];
+
+                // Filtra le direzioni possibili escludendo i muri
+                let validChoices = directions.filter(d => {
+                    let nextGridX = currentGridX + d.x;
+                    let nextGridY = currentGridY + d.y;
+                    if (nextGridY >= 0 && nextGridY < maze.length && nextGridX >= 0 && nextGridX < maze[0].length) {
+                        return maze[nextGridY][nextGridX] !== 1;
+                    }
+                    return false;
+                });
+
+                // Evita di invertire la marcia a meno che non sia un vicolo cieco per un pattern più naturale
+                if (validChoices.length > 1) {
+                    validChoices = validChoices.filter(d => !(d.x === -g.dirX && d.y === -g.dirY));
+                }
+
+                if (validChoices.length > 0) {
+                    let choice;
+                    if (powerModeTimer > 0) {
+                        // Modalità Spaventata: Scelte casuali non aggressive (l'inflazione arretra)
+                        choice = validChoices[Math.floor(Math.random() * validChoices.length)];
+                    } else {
+                        // Inseguimento Intelligente Moderato: Sceglie la direzione che riduce la distanza euclidea da Eco-Man
+                        let targetX = player.x;
+                        let targetY = player.y;
+                        
+                        validChoices.sort((a, b) => {
+                            let distA = Math.pow((g.x + a.x * tileSize) - targetX, 2) + Math.pow((g.y + a.y * tileSize) - targetY, 2);
+                            let distB = Math.pow((g.x + b.x * tileSize) - targetX, 2) + Math.pow((g.y + b.y * tileSize) - targetY, 2);
+                            return distA - distB;
+                        });
+                        
+                        // 70% delle volte segue il percorso ottimale, 30% casuale per non essere imbattibile
+                        if (Math.random() < 0.70) {
+                            choice = validChoices[0];
+                        } else {
+                            choice = validChoices[Math.floor(Math.random() * validChoices.length)];
+                        }
+                    }
+
+                    if (choice) {
+                        g.dirX = choice.x;
+                        g.dirY = choice.y;
+                    }
+                }
+            }
+
+            // Spostamento continuo del fantasma
+            g.x += g.dirX * g.speed;
+            g.y += g.dirY * g.speed;
+
+            // Avvolgimento dei fantasmi nei tunnel laterali
+            if (g.x < -tileSize) g.x = canvas.width;
+            if (g.x > canvas.width) g.x = -tileSize;
+
+            // 5. Controllo Collisione tra Eco-Man e il Fantasma
+            let distance = Math.sqrt(Math.pow((player.x - g.x), 2) + Math.pow((player.y - g.y), 2));
+            if (distance < tileSize * 0.75) {
+                if (powerModeTimer > 0) {
+                    // L'investimento distrugge il picco di inflazione
+                    audio.playEatGhost();
+                    score += 200;
+                    document.getElementById("score-val").innerText = score + "€";
+                    g.x = g.spawnX;
+                    g.y = g.spawnY;
+                    g.dirX = 0;
+                    g.dirY = -1;
+                } else {
+                    // Impatto negativo dell'inflazione non protetta
+                    gameActive = false;
+                    lives--;
+                    document.getElementById("lives-val").innerText = "❤️".repeat(lives) || "❌";
+                    audio.playDeath();
+
+                    setTimeout(() => {
+                        if (lives <= 0) {
+                            endGame(false);
+                        } else {
+                            resetPositions();
+                            gameActive = true;
+                        }
+                    }, 800);
+                }
+            }
+        });
+    }
+
+    // Controlla se tutte le monete e i diamanti sono stati raccolti
+    function checkVictoryCondition() {
+        let itemsCount = 0;
+        for (let r = 0; r < maze.length; r++) {
+            for (let c = 0; c < maze[r].length; c++) {
+                if (maze[r][c] === 2 || maze[r][c] === 3) {
+                    itemsCount++;
+                }
+            }
+        }
+        if (itemsCount === 0) {
+            endGame(true);
+        }
+    }
+
+    // Gestione della schermata finale di Vittoria o Sconfitta
+    function endGame(victory) {
+        gameActive = false;
+        if (victory) {
+            audio.playWin();
+            document.getElementById("final-score-win").innerText = score;
+            document.getElementById("overlay-win").style.display = "flex";
+        } else {
+            document.getElementById("final-score-lose").innerText = score;
+            document.getElementById("overlay-lose").style.display = "flex";
+        }
+    }
+
+    // --- RENDERING GRAFICO (Draw Loop) ---
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 1. Disegno delle celle del Labirinto
+        for (let r = 0; r < maze.length; r++) {
+            for (let c = 0; c < maze[r].length; c++) {
+                let x = c * tileSize;
+                let y = r * tileSize;
+
+                if (maze[r][c] === 1) {
+                    // Muri stile Neon Cyberpunk ad alta definizione
+                    ctx.fillStyle = "#111126";
+                    ctx.fillRect(x, y, tileSize, tileSize);
+                    ctx.strokeStyle = "#1f1f4d";
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(x, y, tileSize, tileSize);
+
+                    // Bordi interni illuminati al neon
+                    ctx.strokeStyle = "#2e2e75";
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x + 3, y + 3, tileSize - 6, tileSize - 6);
+                } else if (maze[r][c] === 2) {
+                    // Risparmi Liquidi (Monetine Dorate sfumate)
+                    ctx.beginPath();
+                    let cx = x + tileSize / 2;
+                    let cy = y + tileSize / 2;
+                    let grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, 5);
+                    grad.addColorStop(0, "#fff5a0");
+                    grad.addColorStop(1, var(--neon-yellow));
+                    ctx.fillStyle = grad;
+                    ctx.arc(cx, cy, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                } else if (maze[r][c] === 3) {
+                    // Diamante Investimento (Disegnato come gemma vettoriale brillante)
+                    let cx = x + tileSize / 2;
+                    let cy = y + tileSize / 2;
+                    ctx.fillStyle = var(--neon-blue);
+                    ctx.beginPath();
+                    ctx.moveTo(cx, cy - 8);
+                    ctx.lineTo(cx + 8, cy);
+                    ctx.lineTo(cx, cy + 8);
+                    ctx.lineTo(cx - 8, cy);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Bagliore centrale bianco
+                    ctx.fillStyle = "#ffffff";
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // 2. Disegno del Giocatore (Eco-Man)
+        if (gameActive || isPaused) {
+            let px = player.x + tileSize / 2;
+            let py = player.y + tileSize / 2;
+            let r = tileSize / 2 - 2;
+
+            // Aggiorna l'angolo visivo in base alla direzione di movimento corrente
+            if (player.dirX > 0) player.angle = 0;
+            else if (player.dirX < 0) player.angle = Math.PI;
+            else if (player.dirY > 0) player.angle = Math.PI / 2;
+            else if (player.dirY < 0) player.angle = Math.PI * 1.5;
+
+            ctx.fillStyle = var(--neon-yellow);
+            ctx.beginPath();
+            
+            // Animazione dinamica della bocca che si apre e chiude ad ogni frame
+            let mouthSize = 0.25 * Math.sin(Date.now() * 0.015) + 0.25;
+            if (player.dirX === 0 && player.dirY === 0) mouthSize = 0.2; // Bocca socchiusa da fermo
+
+            ctx.arc(px, py, r, player.angle + mouthSize, player.angle + Math.PI * 2 - mouthSize);
+            ctx.lineTo(px, py);
+            ctx.closePath();
+            ctx.fill();
+
+            // Occhietto classico
+            ctx.fillStyle = "#000000";
+            ctx.beginPath();
+            let eyeAngle = player.angle + Math.PI/2;
+            ctx.arc(px + Math.cos(eyeAngle)*6, py + Math.sin(eyeAngle)*6, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // 3. Disegno dei Fantasmi (L'Inflazione)
+        ghosts.forEach(g => {
+            let gx = g.x + tileSize / 2;
+            let gy = g.y + tileSize / 2;
+            let r = tileSize / 2 - 2;
+
+            ctx.fillStyle = g.color;
+            ctx.beginPath();
+            // Testa sferica superiore
+            ctx.arc(gx, gy - 2, r, Math.PI, 0, false);
+            // Corpo e base frastagliata classica arcade
+            ctx.lineTo(gx + r, gy + r);
+            
+            // Onde sulla base per un look retrò animato
+            let waveOffset = Math.sin(Date.now() * 0.02 + g.id) * 3;
+            ctx.lineTo(gx + r/2, gy + r - 3 + waveOffset);
+            ctx.lineTo(gx, gy + r);
+            ctx.lineTo(gx - r/2, gy + r - 3 + waveOffset);
+            
+            ctx.lineTo(gx - r, gy + r);
+            ctx.closePath();
+            ctx.fill();
+
+            // Sclera degli occhi (Bianca)
+            ctx.fillStyle = "#ffffff";
+            ctx.beginPath();
+            ctx.arc(gx - 5, gy - 3, 4.5, 0, Math.PI * 2);
+            ctx.arc(gx + 5, gy - 3, 4.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupille orientate nella direzione dello spostamento
+            ctx.fillStyle = powerModeTimer > 0 ? "#ff0000" : "#0000d6";
+            ctx.beginPath();
+            let pXOff = g.dirX * 2;
+            let pYOff = g.dirY * 2;
+            ctx.arc(gx - 5 + pXOff, gy - 3 + pYOff, 2, 0, Math.PI * 2);
+            ctx.arc(gx + 5 + pXOff, gy - 3 + pYOff, 2, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        // 4. Scrittura del testo di Pausa sul Canvas in tempo reale
+        if (isPaused) {
+            ctx.fillStyle = "rgba(4, 4, 8, 0.75)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#ffffff";
+            ctx.font = "bold 24px 'Segoe UI', Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText("SISTEMA FINANZIARIO SOSPESO", canvas.width / 2, canvas.height / 2);
+        }
+    }
+
+    // --- GAME LOOP DI CENTRALE ---
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Avvio asincrono del loop di rendering grafico immediato (schermata iniziale visibile)
+    gameLoop();
+</script>
+
+</body>
+</html>
