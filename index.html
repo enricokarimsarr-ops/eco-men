@@ -684,17 +684,29 @@
         }
     }
 
-    function endGame(victory) {
-        gameActive = false;
-        if (victory) {
-            audio.playWin();
-            document.getElementById("final-score-win").innerText = score;
-            document.getElementById("overlay-win").style.display = "flex";
-        } else {
-            document.getElementById("final-score-lose").innerText = score;
-            document.getElementById("overlay-lose").style.display = "flex";
+    function endGame(isVictory) {
+    gameActive = false;
+    if (timerInterval) clearInterval(timerInterval);
+
+    if (isVictory) {
+        audio.playWin();
+        
+        // === ECCO LE DUE COSE DA INVIARE A GDEVELOP ===
+        if (window.parent) {
+            window.parent.postMessage({
+                type: "ECOMAN_VICTORY", // Identificatore del gioco
+                score: score            // Il punteggio totalizzato nel labirinto
+            }, "*");
         }
+
+        document.getElementById("final-score-win").innerText = score;
+        document.getElementById("overlay-win").style.display = "flex";
+    } else {
+        audio.playLose();
+        document.getElementById("final-score-lose").innerText = score;
+        document.getElementById("overlay-lose").style.display = "flex";
     }
+}
 
     // COMUNICAZIONE CON GDEVELOP
     function closeAndSave() {
