@@ -202,6 +202,15 @@
             transform: translateY(1px);
         }
 
+        .btn-green {
+            background: linear-gradient(180deg, #39ff14 0%, #20b300 100%);
+            box-shadow: 0 5px 15px rgba(57, 255, 20, 0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+        }
+
+        .btn-green:hover {
+            box-shadow: 0 7px 20px rgba(57, 255, 20, 0.6);
+        }
+
         .controls-hint {
             margin-top: 15px;
             font-size: 0.85rem;
@@ -230,7 +239,7 @@
     <div class="hud">
         <div class="hud-item">💰 <span id="score-label">Risparmi:</span> <span id="score-val">0€</span></div>
         <div class="hud-item" id="pause-indicator" style="color: var(--neon-pink); display: none; animation: blink 1s infinite;">PAUSA</div>
-        <div class="hud-item">❤️ <span id="lives-val">❤️❤️❤️</span></div>
+        <div class="hud-item"><span id="lives-val">❤️❤️❤️</span></div>
     </div>
 
     <div class="timer-container" id="investment-timer">
@@ -251,12 +260,12 @@
             <h2>Vittoria Finanziaria!</h2>
             <p>Ottimo lavoro! Hai messo al sicuro l'intero capitale e sconfitto l'erosione dell'inflazione grazie a investimenti tempestivi.</p>
             <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; color: var(--neon-green);">Punteggio finale: <span id="final-score-win">0</span>€</div>
-            <button class="btn-arcade" onclick="startGame()">Gioca Ancora</button>
+            <button class="btn-arcade btn-green" onclick="closeAndSave()">Chiudi e Salva</button>
         </div>
 
         <div class="overlay lose" id="overlay-lose" style="display: none;">
             <h2>Bancarotta!</h2>
-            <p>L'inflazione ha proscugato completamente il tuo potere d'acquisto. Ricorda di proteggerti sempre con investimenti mirati.</p>
+            <p>L'inflazione ha prosciugato completamente il tuo potere d'acquisto. Ricorda di proteggerti sempre con investimenti mirati.</p>
             <div style="font-size: 1.4rem; font-weight: bold; margin-bottom: 20px; color: var(--neon-pink);">Risparmi salvati: <span id="final-score-lose">0</span>€</div>
             <button class="btn-arcade" onclick="startGame()">Riprova</button>
         </div>
@@ -366,7 +375,6 @@
     }
 
     const audio = new SoundEngine();
-
     const canvas = document.getElementById("gameCanvas");
     const ctx = canvas.getContext("2d");
 
@@ -408,10 +416,11 @@
         angle: 0
     };
 
+    // VELOCITA' FANTASMI RIDOTTA (da 2 a 1.6)
     const ghosts = [
-        { id: 1, x: 7 * tileSize, y: 6 * tileSize, dirX: 1, dirY: 0, baseColor: "#ff007f", color: "#ff007f", speed: 2, spawnX: 7 * tileSize, spawnY: 6 * tileSize },
-        { id: 2, x: 6 * tileSize, y: 6 * tileSize, dirX: -1, dirY: 0, baseColor: "#39ff14", color: "#39ff14", speed: 2, spawnX: 6 * tileSize, spawnY: 6 * tileSize },
-        { id: 3, x: 8 * tileSize, y: 6 * tileSize, dirX: 0, dirY: -1, baseColor: "#00f0ff", color: "#00f0ff", speed: 2, spawnX: 8 * tileSize, spawnY: 6 * tileSize }
+        { id: 1, x: 7 * tileSize, y: 6 * tileSize, dirX: 1, dirY: 0, baseColor: "#ff007f", color: "#ff007f", speed: 1.6, spawnX: 7 * tileSize, spawnY: 6 * tileSize },
+        { id: 2, x: 6 * tileSize, y: 6 * tileSize, dirX: -1, dirY: 0, baseColor: "#39ff14", color: "#39ff14", speed: 1.6, spawnX: 6 * tileSize, spawnY: 6 * tileSize },
+        { id: 3, x: 8 * tileSize, y: 6 * tileSize, dirX: 0, dirY: -1, baseColor: "#00f0ff", color: "#00f0ff", speed: 1.6, spawnX: 8 * tileSize, spawnY: 6 * tileSize }
     ];
 
     window.addEventListener("keydown", e => {
@@ -462,6 +471,7 @@
     }
 
     function startGame() {
+        window.focus(); // Aggiunto per connettere subito i comandi della tastiera all'iframe
         audio.init();
         
         maze = initialMaze.map(row => [...row]);
@@ -569,7 +579,13 @@
         }
 
         ghosts.forEach(g => {
-            if (g.x % tileSize === 0 && g.y % tileSize === 0) {
+            // Fix per i calcoli float-point
+            let isAligned = Math.abs((g.x % tileSize) - 0) < 0.1 || Math.abs((g.x % tileSize) - tileSize) < 0.1;
+            let isAlignedY = Math.abs((g.y % tileSize) - 0) < 0.1 || Math.abs((g.y % tileSize) - tileSize) < 0.1;
+
+            if (isAligned && isAlignedY) {
+                g.x = Math.round(g.x / tileSize) * tileSize;
+                g.y = Math.round(g.y / tileSize) * tileSize;
                 let currentGridX = g.x / tileSize;
                 let currentGridY = g.y / tileSize;
 
@@ -680,6 +696,17 @@
         }
     }
 
+    // COMUNICAZIONE CON GDEVELOP
+    function closeAndSave() {
+        if (window.parent) {
+            // Inviamo il messaggio verso la finestra principale (GDevelop)
+            window.parent.postMessage({
+                type: "ECOMAN_VICTORY",
+                score: score
+            }, "*");
+        }
+    }
+
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -704,14 +731,14 @@
                     let cy = y + tileSize / 2;
                     let grad = ctx.createRadialGradient(cx, cy, 1, cx, cy, 5);
                     grad.addColorStop(0, "#fff5a0");
-                    grad.addColorStop(1, "#ffdf00"); // FIXED!
+                    grad.addColorStop(1, "#ffdf00"); 
                     ctx.fillStyle = grad;
                     ctx.arc(cx, cy, 4, 0, Math.PI * 2);
                     ctx.fill();
                 } else if (maze[r][c] === 3) {
                     let cx = x + tileSize / 2;
                     let cy = y + tileSize / 2;
-                    ctx.fillStyle = "#00f0ff"; // FIXED!
+                    ctx.fillStyle = "#00f0ff"; 
                     ctx.beginPath();
                     ctx.moveTo(cx, cy - 8);
                     ctx.lineTo(cx + 8, cy);
@@ -738,7 +765,7 @@
             else if (player.dirY > 0) player.angle = Math.PI / 2;
             else if (player.dirY < 0) player.angle = Math.PI * 1.5;
 
-            ctx.fillStyle = "#ffdf00"; // FIXED!
+            ctx.fillStyle = "#ffdf00"; 
             ctx.beginPath();
             
             let mouthSize = 0.25 * Math.sin(Date.now() * 0.015) + 0.25;
