@@ -416,7 +416,6 @@
         angle: 0
     };
 
-    // VELOCITA' FANTASMI RIDOTTA (da 2 a 1.6)
     const ghosts = [
         { id: 1, x: 7 * tileSize, y: 6 * tileSize, dirX: 1, dirY: 0, baseColor: "#ff007f", color: "#ff007f", speed: 1.6, spawnX: 7 * tileSize, spawnY: 6 * tileSize },
         { id: 2, x: 6 * tileSize, y: 6 * tileSize, dirX: -1, dirY: 0, baseColor: "#39ff14", color: "#39ff14", speed: 1.6, spawnX: 6 * tileSize, spawnY: 6 * tileSize },
@@ -471,7 +470,7 @@
     }
 
     function startGame() {
-        window.focus(); // Aggiunto per connettere subito i comandi della tastiera all'iframe
+        window.focus(); 
         audio.init();
         
         maze = initialMaze.map(row => [...row]);
@@ -579,7 +578,6 @@
         }
 
         ghosts.forEach(g => {
-            // Fix per i calcoli float-point
             let isAligned = Math.abs((g.x % tileSize) - 0) < 0.1 || Math.abs((g.x % tileSize) - tileSize) < 0.1;
             let isAlignedY = Math.abs((g.y % tileSize) - 0) < 0.1 || Math.abs((g.y % tileSize) - tileSize) < 0.1;
 
@@ -670,6 +668,7 @@
         });
     }
 
+    // CORREZIONE BUG VITTORIA E SCONFITTA
     function checkVictoryCondition() {
         let itemsCount = 0;
         for (let r = 0; r < maze.length; r++) {
@@ -685,33 +684,29 @@
     }
 
     function endGame(isVictory) {
-    gameActive = false;
-    if (timerInterval) clearInterval(timerInterval);
+        gameActive = false; // Blocca subito gli aggiornamenti di gioco
 
-    if (isVictory) {
-        audio.playWin();
-        
-        // === ECCO LE DUE COSE DA INVIARE A GDEVELOP ===
-        if (window.parent) {
-            window.parent.postMessage({
-                type: "ECOMAN_VICTORY", // Identificatore del gioco
-                score: score            // Il punteggio totalizzato nel labirinto
-            }, "*");
+        if (isVictory) {
+            audio.playWin();
+            
+            if (window.parent) {
+                window.parent.postMessage({
+                    type: "ECOMAN_VICTORY",
+                    score: score            
+                }, "*");
+            }
+
+            document.getElementById("final-score-win").innerText = score;
+            document.getElementById("overlay-win").style.display = "flex";
+        } else {
+            audio.playDeath(); // Corretto da playLose() a playDeath()
+            document.getElementById("final-score-lose").innerText = score;
+            document.getElementById("overlay-lose").style.display = "flex";
         }
-
-        document.getElementById("final-score-win").innerText = score;
-        document.getElementById("overlay-win").style.display = "flex";
-    } else {
-        audio.playLose();
-        document.getElementById("final-score-lose").innerText = score;
-        document.getElementById("overlay-lose").style.display = "flex";
     }
-}
 
-    // COMUNICAZIONE CON GDEVELOP
     function closeAndSave() {
         if (window.parent) {
-            // Inviamo il messaggio verso la finestra principale (GDevelop)
             window.parent.postMessage({
                 type: "ECOMAN_VICTORY",
                 score: score
