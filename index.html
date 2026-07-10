@@ -668,7 +668,6 @@
         });
     }
 
-    // CORREZIONE BUG VITTORIA E SCONFITTA
     function checkVictoryCondition() {
         let itemsCount = 0;
         for (let r = 0; r < maze.length; r++) {
@@ -688,23 +687,17 @@
 
         if (isVictory) {
             audio.playWin();
-            
-            if (window.parent) {
-                window.parent.postMessage({
-                    type: "ECOMAN_VICTORY",
-                    score: score            
-                }, "*");
-            }
-
+            // RIMOSSO il postMessage immediato da qui, così non chiude di botto!
             document.getElementById("final-score-win").innerText = score;
             document.getElementById("overlay-win").style.display = "flex";
         } else {
-            audio.playDeath(); // Corretto da playLose() a playDeath()
+            audio.playDeath(); 
             document.getElementById("final-score-lose").innerText = score;
             document.getElementById("overlay-lose").style.display = "flex";
         }
     }
 
+    // Questa funzione viene chiamata ESCLUSIVAMENTE al click sul bottone verde "Chiudi e Salva"
     function closeAndSave() {
         if (window.parent) {
             window.parent.postMessage({
